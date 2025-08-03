@@ -409,24 +409,18 @@ void export_tree_to_dot(struct red_black_tree *tree, const char *filename) {
 }
 
 #ifndef NUM_INSERTS
-#define NUM_INSERTS 10000
+#define NUM_INSERTS 100
 #endif
 
 #define NUM_REMOVES NUM_INSERTS / 2
 
-static inline uint64_t rdtsc(void) {
-    uint32_t lo, hi;
-    asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
-    return ((uint64_t) hi << 32) | lo;
-}
-
 int main() {
+    printf("Red-black tree...\n");
     struct red_black_tree *tree = red_black_tree_create();
     int *values = malloc(NUM_INSERTS * sizeof(int));
 
     srand((unsigned) time(NULL));
 
-    uint64_t insert_total_cc = 0;
     for (int i = 0; i < NUM_INSERTS;) {
         int value = rand() % NUM_INSERTS;
 
@@ -441,11 +435,8 @@ int main() {
             continue;
 
         values[i++] = value;
-        uint64_t tsc = rdtsc();
         red_black_tree_insert(tree, value);
-        insert_total_cc += (rdtsc() - tsc);
     }
-    printf("Insertions took %lu clock cycles\n", insert_total_cc);
 
     for (int i = NUM_INSERTS - 1; i > 0; i--) {
         int j = rand() % (i + 1);
@@ -454,13 +445,9 @@ int main() {
         values[j] = tmp;
     }
 
-    uint64_t removal_total_cc = 0;
     for (int i = 0; i < NUM_REMOVES; i++) {
-        uint64_t tsc = rdtsc();
         red_black_tree_remove(tree, values[i]);
-        removal_total_cc += (rdtsc() - tsc);
     }
-    printf("Removals took %lu clock cycles\n", removal_total_cc);
 
     export_tree_to_dot(tree, "rbtree.dot");
     printf("Export complete\n");

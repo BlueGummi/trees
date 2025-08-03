@@ -228,19 +228,13 @@ void export_tree_to_dot(struct avl_tree *tree, const char *filename) {
 
 #define NUM_REMOVES NUM_INSERTS / 2
 
-static inline uint64_t rdtsc(void) {
-    uint32_t lo, hi;
-    asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
-    return ((uint64_t) hi << 32) | lo;
-}
-
 int main() {
+    printf("AVL tree...\n");
     struct avl_tree *tree = malloc(sizeof(struct avl_tree));
     int *values = malloc(NUM_INSERTS * sizeof(int));
 
     srand((unsigned) time(NULL));
 
-    uint64_t insert_total_cc = 0;
     for (int i = 0; i < NUM_INSERTS;) {
         int value = rand() % NUM_INSERTS;
 
@@ -255,11 +249,8 @@ int main() {
             continue;
 
         values[i++] = value;
-        uint64_t tsc = rdtsc();
         avl_tree_insert(tree, value);
-        insert_total_cc += (rdtsc() - tsc);
     }
-    printf("Insertions took %lu clock cycles\n", insert_total_cc);
 
     for (int i = NUM_INSERTS - 1; i > 0; i--) {
         int j = rand() % (i + 1);
@@ -268,12 +259,8 @@ int main() {
         values[j] = tmp;
     }
 
-    uint64_t removal_total_cc = 0;
     for (int i = 0; i < NUM_REMOVES; i++) {
-        uint64_t tsc = rdtsc();
-        removal_total_cc += (rdtsc() - tsc);
     }
-    printf("Removals took %lu clock cycles\n", removal_total_cc);
 
     export_tree_to_dot(tree, "avltree.dot");
     printf("Export complete\n");
