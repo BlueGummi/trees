@@ -1,4 +1,4 @@
-# trees - some tree data structures
+# trees - some tree data structures and visualizations
 
 ## how to run
 
@@ -9,5 +9,8 @@ then just run
 ```bash
 make everything
 ```
+
+you will get cool png, svg, and jpg formats for the trees, and they
+are slightly random and different each time
 
 :thumbsup:
