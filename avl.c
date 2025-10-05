@@ -229,7 +229,8 @@ void export_tree_to_dot(struct avl_tree *tree, const char *filename) {
 #define NUM_REMOVES NUM_INSERTS / 2
 
 int main() {
-    printf("AVL tree...\n");
+    printf("AVL tree... ");
+    fflush(stdout);
     struct avl_tree *tree = malloc(sizeof(struct avl_tree));
     int *values = malloc(NUM_INSERTS * sizeof(int));
 
@@ -263,7 +264,7 @@ int main() {
     }
 
     export_tree_to_dot(tree, "avltree.dot");
-    printf("Export complete\n");
+    printf("complete\n");
 
     avl_tree_free(tree->root);
     free(tree);

@@ -415,7 +415,8 @@ void export_tree_to_dot(struct red_black_tree *tree, const char *filename) {
 #define NUM_REMOVES NUM_INSERTS / 2
 
 int main() {
-    printf("Red-black tree...\n");
+    printf("Red-black tree... ");
+    fflush(stdout);
     struct red_black_tree *tree = red_black_tree_create();
     int *values = malloc(NUM_INSERTS * sizeof(int));
 
@@ -450,7 +451,7 @@ int main() {
     }
 
     export_tree_to_dot(tree, "rbtree.dot");
-    printf("Export complete\n");
+    printf("complete\n");
 
     red_black_tree_free(tree->root);
     free(tree);
