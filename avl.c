@@ -271,7 +271,7 @@ void export_tree_to_dot(struct avl_tree *tree, const char *filename) {
         return;
     }
 
-    fprintf(fp, "digraph RedBlackTree {\n");
+    fprintf(fp, "digraph AvlTree {\n");
     fprintf(
         fp,
         "    node [shape=circle, fontname=Arial, fixedsize=true, width=0.7];\n");

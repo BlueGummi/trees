@@ -9,7 +9,13 @@ JPGS := $(DOT:.dot=.jpg)
 .SILENT:
 
 log = @echo -n "[\e[1;92mmakefile\e[0m]:$1"; echo
-
+ifneq ($(OS), Windows_NT)
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Darwin)
+		log = @echo "[makefile]:$1"
+	endif
+endif
+		
 all: $(BIN)
 	$(call log, "execute 'make help' to see all options")
 
