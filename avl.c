@@ -123,6 +123,68 @@ void avl_tree_insert(struct avl_tree *tree, int data) {
     rebalance(tree, parent);
 }
 
+static struct avl_tree_node *
+min_node(struct avl_tree_node *node) {
+    while (node && node->left)
+        node = node->left;
+    return node;
+}
+
+static void
+transplant(struct avl_tree *tree,
+           struct avl_tree_node *u,
+           struct avl_tree_node *v) {
+    if (!u->parent)
+        tree->root = v;
+    else if (u == u->parent->left)
+        u->parent->left = v;
+    else
+        u->parent->right = v;
+    if (v)
+        v->parent = u->parent;
+}
+
+void avl_tree_remove(struct avl_tree *tree, int data) {
+    struct avl_tree_node *node = tree->root;
+    while (node && node->data != data)
+        node = (data < node->data) ? node->left : node->right;
+    if (!node)
+        return;
+
+    struct avl_tree_node *rebalance_start = node->parent;
+
+    if (!node->left) {
+        transplant(tree, node, node->right);
+    } else if (!node->right) {
+        transplant(tree, node, node->left);
+    } else {
+        struct avl_tree_node *succ = min_node(node->right);
+        struct avl_tree_node *rebalance_from = succ->parent;
+
+        if (succ->parent != node) {
+            transplant(tree, succ, succ->right);
+            succ->right = node->right;
+            if (succ->right)
+                succ->right->parent = succ;
+        } else {
+            rebalance_from = succ;
+        }
+
+        transplant(tree, node, succ);
+        succ->left = node->left;
+        if (succ->left)
+            succ->left->parent = succ;
+
+        update_height(succ);
+
+        rebalance_start = rebalance_from;
+    }
+
+    free(node);
+    if (rebalance_start)
+        rebalance(tree, rebalance_start);
+}
+
 int validate_avltree(struct avl_tree_node *node, int *height_out) {
     if (!node) {
         *height_out = 0;
@@ -261,6 +323,9 @@ int main() {
     }
 
     for (int i = 0; i < NUM_REMOVES; i++) {
+        avl_tree_remove(tree, values[i]);
+        int h;
+        assert(validate_avltree(tree->root, &h));
     }
 
     export_tree_to_dot(tree, "avltree.dot");
