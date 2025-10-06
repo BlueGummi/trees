@@ -443,6 +443,28 @@ bool bptree_delete(struct bptree *tree, int32_t key) {
     return deleted;
 }
 
+static void bptree_free_node(struct bptree_node *node) {
+    if (!node)
+        return;
+
+    if (!node->leaf) {
+        /* Free all children first */
+        for (int i = 0; i <= node->num_keys; i++)
+            bptree_free_node(node->children[i]);
+    }
+
+    /* Free this node itself */
+    free(node);
+}
+
+void bptree_free(struct bptree *tree) {
+    if (!tree)
+        return;
+
+    bptree_free_node(tree->root);
+    free(tree);
+}
+
 static void bptree_dot_node(FILE *f, struct bptree_node *node, int *id) {
     node->dot_id = (*id)++;
     int my_id = node->dot_id;
@@ -565,6 +587,6 @@ int main(void) {
     printf("complete\n");
 
     free(values);
-    free(tree);
+    bptree_free(tree);
     return 0;
 }

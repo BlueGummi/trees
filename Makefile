@@ -1,4 +1,4 @@
-CFLAGS = -Wall -O3 -flto -ggdb
+CFLAGS = -Wall -Wno-format -O3 -flto -ggdb
 SRC := $(wildcard *.c)
 BIN := $(SRC:.c=)
 DOT := $(wildcard *.dot)

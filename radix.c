@@ -79,8 +79,10 @@ static void radix_prune_up(struct radix_node *node, struct radix_tree *tree) {
     while (node && node->present_mask == 0) {
         struct radix_node *parent = node->parent;
         if (!parent) {
-            if (tree->root == node)
+            if (tree->root == node) {
+                free(node);
                 tree->root = NULL;
+            }
             break;
         }
 
@@ -92,6 +94,7 @@ static void radix_prune_up(struct radix_node *node, struct radix_tree *tree) {
             }
         }
 
+        free(node);
         node = parent;
     }
 }
@@ -113,6 +116,7 @@ int32_t radix_delete(struct radix_tree *tree, uint64_t key) {
     if (!node)
         return -ENOENT;
 
+    free(node);
     parent->slots[idx] = NULL;
     parent->present_mask &= ~(1ULL << idx);
 
@@ -160,6 +164,29 @@ struct radix_node *radix_create_node(uint64_t key_part) {
     struct radix_node *node = calloc(1, sizeof(struct radix_node));
     node->key_part = key_part;
     return node;
+}
+
+static void radix_free_node(struct radix_node *node) {
+    if (!node)
+        return;
+
+    /* Recursively free all children */
+    for (int i = 0; i < RADIX_SIZE; i++)
+        if (node->slots[i])
+            radix_free_node(node->slots[i]);
+
+    free(node);
+}
+
+void radix_free_tree(struct radix_tree *tree) {
+    if (!tree)
+        return;
+
+    if (tree->root)
+        radix_free_node(tree->root);
+
+    tree->root = NULL;
+    tree->height = 0;
 }
 
 int main(void) {
@@ -210,6 +237,7 @@ int main(void) {
     export_radix_tree_to_dot(&tree, "radixtree.dot");
     printf("complete\n");
 
+    radix_free_tree(&tree);
     free(keys);
     return 0;
 }
