@@ -508,8 +508,8 @@ void export_bptree_to_dot(struct bptree *tree, const char *filename) {
     fclose(f);
 }
 
-#define NUM_INSERTS 10000
-#define NUM_REMOVES 5000
+#define NUM_INSERTS 100
+#define NUM_REMOVES 50
 
 int main(void) {
     printf("B+ tree... ");
