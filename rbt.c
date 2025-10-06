@@ -19,10 +19,6 @@ struct red_black_tree {
     struct red_black_tree_node *root;
 };
 
-static inline int is_black(struct red_black_tree_node *node) {
-    return !node || node->color == TREE_NODE_BLACK;
-}
-
 struct red_black_tree *red_black_tree_create(void) {
     struct red_black_tree *tree = (struct red_black_tree *) malloc(sizeof(struct red_black_tree));
     tree->root = NULL;
