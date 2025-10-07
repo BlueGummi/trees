@@ -26,6 +26,7 @@ all: $(BIN)
 clean:
 	$(call log, "cleaning...")
 	@rm -f $(BIN) $(PNGS) $(SVGS) $(JPGS) $(DOT)
+	@rm -rf *dSYM
 
 run: $(BIN)
 	$(call log, "running binaries...")
