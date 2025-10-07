@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,65 @@ struct radix_node *radix_lookup(struct radix_tree *tree, uint64_t key) {
         node = node->slots[idx];
     }
     return node;
+}
+
+static bool radix_verify_node(struct radix_node *node,
+                              struct radix_node *expected_parent,
+                              int level, int max_height,
+                              int *node_count) {
+    if (!node)
+        return true;
+
+    if (node->parent != expected_parent) {
+        fprintf(stderr, "Node %p has incorrect parent %p (expected %p)\n",
+                (void *) node, (void *) node->parent, (void *) expected_parent);
+        return false;
+    }
+
+    if (node_count)
+        (*node_count)++;
+
+    uint64_t expected_mask = 0;
+    for (int i = 0; i < RADIX_SIZE; i++) {
+        if (node->slots[i])
+            expected_mask |= (1ULL << i);
+    }
+
+    if (expected_mask != node->present_mask) {
+        fprintf(stderr, "Node %p present_mask mismatch: expected 0x%llx, got 0x%llx\n",
+                (void *) node, (unsigned long long) expected_mask,
+                (unsigned long long) node->present_mask);
+        return false;
+    }
+
+    for (int i = 0; i < RADIX_SIZE; i++) {
+        struct radix_node *child = node->slots[i];
+
+        if (level > max_height && child) {
+            fprintf(stderr, "Node %p at level %d has child beyond max height %d\n",
+                    (void *) node, level, max_height);
+            return false;
+        }
+
+        if (child && !radix_verify_node(child, node, level + 1, max_height, node_count))
+            return false;
+    }
+
+    return true;
+}
+
+bool radix_verify_tree(struct radix_tree *tree) {
+    if (!tree)
+        return true;
+
+    if (!tree->root) {
+        if (tree->height != 0)
+            fprintf(stderr, "Tree has no root but nonzero height %u\n", tree->height);
+        return (tree->height == 0);
+    }
+
+    int node_count = 0;
+    return radix_verify_node(tree->root, NULL, 0, tree->height, &node_count);
 }
 
 static void radix_prune_up(struct radix_node *node, struct radix_tree *tree) {
@@ -216,6 +276,7 @@ int main(void) {
 
         struct radix_node *n = radix_create_node(key);
         int ret = radix_insert(&tree, key, n);
+        assert(radix_verify_tree(&tree));
         if (ret != 0 && ret != -EEXIST)
             fprintf(stderr, "Insert failed for key %llu: %d\n", key, ret);
 
@@ -225,11 +286,13 @@ int main(void) {
     for (int i = 0; i < NUM_LOOKUPS; i++) {
         uint64_t key = keys[rand() % NUM_INSERTS];
         struct radix_node *found = radix_lookup(&tree, key);
+        assert(radix_verify_tree(&tree));
         assert(found && "lookup failed for an inserted key");
     }
 
     for (int i = 0; i < NUM_INSERTS / 2; i++) {
         int ret = radix_delete(&tree, keys[i]);
+        assert(radix_verify_tree(&tree));
         if (ret != 0)
             fprintf(stderr, "Delete failed for key %llu: %d\n", keys[i], ret);
     }
