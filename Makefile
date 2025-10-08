@@ -8,66 +8,73 @@ JPGS := $(DOT:.dot=.jpg)
 
 .SILENT:
 
-log = @echo -n "[\e[1;92mmakefile\e[0m]:$1"; echo
-ifneq ($(OS), Windows_NT)
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Darwin)
-		log = @echo "[makefile]:$1"
-	endif
-endif
+log = @echo "[makefile]:$1"
 		
 all: $(BIN)
 	$(call log, "execute 'make help' to see all options")
 
 %: %.c
-	$(call log, "building $<...")
+	printf "[makefile]: building %15s...\n" "$<"
 	@$(CC) $(CFLAGS) -o $@ $<
 
-clean:
-	$(call log, "cleaning...")
-	@rm -f $(BIN) $(PNGS) $(SVGS) $(JPGS) $(DOT)
+clean-bin:
+	$(call log, "cleaning binaries...")
+	@rm -f $(BIN)
 	@rm -rf *dSYM
+	
+clean-dot:
+	$(call log, "cleaning .dot files...")
+	@rm -f $(DOT)
+
+clean-img:
+	$(call log, "cleaning images...")
+	@rm -f $(PNGS) $(SVGS) $(JPGS)
+
+clean: clean-bin clean-dot clean-img
 
 run: $(BIN)
 	$(call log, "running binaries...")
 	@for bin in $(BIN); do ./$$bin; done
 
 check-dot:
-	@command -v dot >/dev/null 2>&1 || { echo "[\e[1;92mmakefile\e[0m]: 'dot' command not found, install graphviz"; exit 1; }
+	@command -v dot >/dev/null 2>&1 || { echo "[makefile]: 'dot' command not found, install graphviz"; exit 1; }
 
-png: check-dot $(PNGS)
-
-%.png: %.dot
-	$(call log, "generating $@...")
-	@dot $< -Tpng -o $@
-
-svg: check-dot $(SVGS)
-
-%.svg: %.dot
-	$(call log, "generating $@...")
-	@dot $< -Tsvg -o $@
-
-jpg: check-dot $(JPGS)
-
-%.jpg: %.dot
-	$(call log, "generating $@...")
-	@dot $< -Tjpg -o $@
-
-images: check-dot
-	$(call log, "generating images from .dot files...")
+png: run check-dot
 	@for f in *.dot; do \
 		[ -f "$$f" ] || continue; \
+		printf "[makefile]: generating %15s...\n" "$${f%.dot}.png"; \
 		dot "$$f" -Tpng -o "$${f%.dot}.png"; \
+	done
+
+svg: run check-dot
+	@for f in *.dot; do \
+		[ -f "$$f" ] || continue; \
+		printf "[makefile]: generating %15s...\n" "$${f%.dot}.svg"; \
 		dot "$$f" -Tsvg -o "$${f%.dot}.svg"; \
+	done
+
+jpg: run check-dot
+	@for f in *.dot; do \
+		[ -f "$$f" ] || continue; \
+		printf "[makefile]: generating %15s...\n" "$${f%.dot}.jpg"; \
 		dot "$$f" -Tjpg -o "$${f%.dot}.jpg"; \
 	done
 
+image-prelude:
+	$(call log, "generating images from .dot files...")
+
+images: run check-dot image-prelude png svg jpg
+	$(call log, "all images generated")
+	
 everything: run images
-	$(call log, "everything compiled and all images generated")
+	$(call log, "complete")
 
 help:
 	$(call log, "Makefile options:")
 	$(call log, "  all        - Build all binaries")
+	$(call log, "  clean-bin  - Remove all binaries")
+	$(call log, "  clean-img  - Remove all images")
+	$(call log, "  clean-dot  - Remove all graphviz .dot files")
 	$(call log, "  clean      - Remove all binaries and generated files")
 	$(call log, "  run        - Execute all binaries")
 	$(call log, "  check-dot  - Check if 'dot' command is available")
